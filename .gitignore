@@ -1,0 +1,21 @@
+# Terraform working files
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# Sensitive variable files
+*.tfvars
+*.tfvars.json
+.env
+.env.*
+
+# Keep dependency lock files
+!**/.terraform.lock.hcl
+
+# Operating system files
+.DS_Store
+Thumbs.db
+.venv/
