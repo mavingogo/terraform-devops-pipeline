@@ -26,6 +26,9 @@ resource "aws_kms_key" "s3_encryption" {
 data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "secure_storage" {
+  #checkov:skip=CKV2_AWS_62: Event notifications are outside the scope of this static demonstration.
+  #checkov:skip=CKV_AWS_144: Cross-region replication is outside the scope of this no-deployment demonstration.
+
   bucket = "devsecops-demo-bucket-change-this-name"
 }
 
@@ -76,8 +79,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "secure_storage" {
   }
 }
 
-# Dedicated bucket for storing S3 access logs
 resource "aws_s3_bucket" "access_logs" {
+  #checkov:skip=CKV2_AWS_62: Event notifications are outside the scope of this static demonstration.
+  #checkov:skip=CKV_AWS_144: Cross-region replication is outside the scope of this no-deployment demonstration.
+  #checkov:skip=CKV_AWS_145: S3 server access log destination buckets require SSE-S3 rather than SSE-KMS.
+
   bucket = "devsecops-demo-access-logs-change-this-name"
 }
 
@@ -96,4 +102,33 @@ resource "aws_s3_bucket_logging" "secure_storage" {
   bucket        = aws_s3_bucket.secure_storage.id
   target_bucket = aws_s3_bucket.access_logs.id
   target_prefix = "s3-access-logs/"
+}
+
+# Enable versioning for the access logs bucket
+resource "aws_s3_bucket_versioning" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Manage retention of access logs
+resource "aws_s3_bucket_lifecycle_configuration" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+
+  rule {
+    id     = "expire-old-access-logs"
+    status = "Enabled"
+
+    filter {}
+
+    expiration {
+      days = 365
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
 }
